@@ -4,6 +4,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sys
 import os
+from tkinter import messagebox
+
 
 # Tratamento dos arquivo CSV - transformando o arquivo em "dataframe"
 current_directory = os.path.dirname(os.path.abspath(__file__))
@@ -59,22 +61,22 @@ def open_select_dates_window():
     select_dates_window.title("Selecionar Datas")
     select_dates_window.geometry("300x250")
 
-    start_month_label = tk.Label(select_dates_window, text="Mês de início:")
+    start_month_label = tk.Label(select_dates_window, text="Mês de início (01 a 12):")
     start_month_label.pack()
     start_month_entry = tk.Entry(select_dates_window)
     start_month_entry.pack()
 
-    start_year_label = tk.Label(select_dates_window, text="Ano de início:")
+    start_year_label = tk.Label(select_dates_window, text="Ano de início (1961 a 2016):")
     start_year_label.pack()
     start_year_entry = tk.Entry(select_dates_window)
     start_year_entry.pack()
 
-    end_month_label = tk.Label(select_dates_window, text="Mês de término:")
+    end_month_label = tk.Label(select_dates_window, text="Mês de término (01 a 12):")
     end_month_label.pack()
     end_month_entry = tk.Entry(select_dates_window)
     end_month_entry.pack()
 
-    end_year_label = tk.Label(select_dates_window, text="Ano de término:")
+    end_year_label = tk.Label(select_dates_window, text="Ano de término (1961 a 2016):")
     end_year_label.pack()
     end_year_entry = tk.Entry(select_dates_window)
     end_year_entry.pack()
@@ -84,12 +86,28 @@ def open_select_dates_window():
     
     back_button = tk.Button(select_dates_window, text="Voltar", command=select_dates_window.destroy)
     back_button.pack()
+    
+def validate_date_range(start_month, start_year, end_month, end_year):
+    # Validar se os valores estão dentro do intervalo permitido
+    start_month = int(start_month)
+    start_year = int(start_year)
+    end_month = int(end_month)
+    end_year = int(end_year)
 
+    if not (1 <= start_month <= 12) or not (1 <= end_month <= 12):
+        return False
+
+    if not (1961 <= start_year <= 2016) or not (1961 <= end_year <= 2016):
+        return False
+
+    return True
 
 def show_data(start_month, start_year, end_month, end_year):
-    # Caminho do arquivo CSV original
-    caminho_arquivo_origem = r'D:\WORKDESCTOP_TRABALHOS\Lucas\PYTHON\Projetos\TRABALHO_EXTRAS\TESTe\OK_Anexo_Arquivo_Dados_Projeto.csv'
-
+    
+    # Validar os valores inseridos pelo usuário
+    if not validate_date_range(start_month, start_year, end_month, end_year):
+        tk.messagebox.showerror("Erro", "Intervalo de datas inválido. Verifique os valores inseridos.")
+        return
     # Ler o arquivo CSV e preparar os dados
     dataframe = ler_arquivo_csv(caminho_arquivo_origem)
     dataframe_filtrado = filtrar_dados(dataframe)
@@ -215,23 +233,26 @@ def media_temperatura_ultimos_11_anos():
 
 
 def generate_bar_chart():
-    
     # Normalizar os dados do arquivo CSV e filtrar os dados inválidos
     dataframe_filtrado = normalizar_dados_csv(caminho_arquivo_origem)
 
     # Extrair o ano da coluna 'data'
     dataframe_filtrado['ano'] = dataframe_filtrado['data'].dt.year
 
-    # Calcular a média anual
-    media_anual = dataframe_filtrado.groupby('ano').mean()
+    # Calcular as temperaturas máximas e mínimas anuais
+    temperatura_maxima = dataframe_filtrado.groupby('ano')['temperatura'].max()
+    temperatura_minima = dataframe_filtrado.groupby('ano')['temperatura'].min()
 
-    # Gerar gráfico de barras das médias anuais
-    media_anual.plot(kind='bar', y='temp_media')
+    # Gerar gráfico de barras das temperaturas máximas e mínimas anuais
+    plt.bar(temperatura_maxima.index, temperatura_maxima, label='Temperatura Máxima')
+    plt.bar(temperatura_minima.index, temperatura_minima, label='Temperatura Mínima')
+
     plt.xlabel('Ano')
-    plt.ylabel('Média de temperatura')
-    plt.title('Médias Anuais')
+    plt.ylabel('Temperatura')
+    plt.title('Temperaturas Máximas e Mínimas Anuais')
+    plt.legend()
     plt.show()
-    
+
     back_button = tk.Button(chart_window, text="Voltar", command=chart_window.destroy)
     back_button.pack()
 
@@ -267,10 +288,10 @@ window = tk.Tk()
 window.title("Análise Climática")
 window.geometry("450x150")
 
-select_dates_button = tk.Button(window, text="Selecionar Datas", command=open_select_dates_window)
+select_dates_button = tk.Button(window, text="Selecionar Intervalo de Datas 1961 e 2016", command=open_select_dates_window)
 select_dates_button.pack()
 
-generate_chart_button = tk.Button(window, text="Gerar Gráfico de Barras", command=generate_bar_chart)
+generate_chart_button = tk.Button(window, text="Gerar Gráfico de Barras das temperaturas Máximas e Minimas", command=generate_bar_chart)
 generate_chart_button.pack()
 
 calculate_average_button = tk.Button(window, text="Calcular Média de Temperaturas Minimas e Máximas dos ultimos 11 anos", command=calculate_average_temperature)
